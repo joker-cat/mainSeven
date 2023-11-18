@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/c3/0.7.18/c3.css">
+    <link rel="stylesheet" href="./index.css">
+    <title>Document</title>
+</head>
+
+<body>
+    <h1 style="visibility: hidden;width: 0;height: 0;overflow: hidden;">訂票網站</h1>
+    <section class="sec1">
+        <div class="sec1-left">
+            <img class="logo-set" src="https://github.com/joker-cat/-midterm/blob/main/image/main_img.png?raw=true">
+            <img class="title-set" src="https://github.com/joker-cat/-midterm/blob/main/image/logo.png?raw=true">
+        </div>
+        <form class="sec1-right">
+            <h2 class="new-ticket">新增旅遊套票</h2>
+            <ul class="infostyle-set">
+                <li><label>套票名稱</label><input class="is-null input-set" placeholder="請填寫套票名稱" type="text" name="name">
+                </li>
+                <li><label>圖片網址</label><input class="is-null input-set is-img" placeholder="請填寫圖片網址" type="text"
+                        name="imgUrl">
+                </li>
+                <li><label>景點地區</label>
+                    <select name="area" class="is-null select-area">
+                        <option value="" disabled selected hidden>請選擇景點地區</option>
+                        <option value="台北">台北</option>
+                        <option value="台中">台中</option>
+                        <option value="高雄">高雄</option>
+                    </select>
+                </li>
+                <li>
+                    <label>套票金額</label>
+                    <input class="is-null input-set" min="1" placeholder="請填寫套票金額" type="number" name="price"
+                        data-style="number">
+                </li>
+                <li>
+                    <label>套票組數</label>
+                    <input class="is-null input-set" min="1" placeholder="請填寫套票組數" type="number" name="group"
+                        data-style="number">
+                </li>
+                <li><label>套票星級</label>
+                    <input min="1" max="10" class="is-null input-set" placeholder="請填寫套票星級" type="number" name="rate"
+                        data-style="number">
+                </li>
+                <li>
+                    <label>套票描述</label>
+                    <textarea name="description" class="is-null textarea-set" placeholder="請填寫套票描述 (限 100 字)"
+                        maxlength="100"></textarea>
+                </li>
+            </ul>
+            <button class="btn">新增套票</button>
+        </form>
+    </section>
+    <section class="sec2">
+        <div class="filter">
+            <select name="filter-viewArea" class="filter-area">
+                <option value="" disabled selected hidden>地區選擇</option>
+                <option value="全部地區">全部地區</option>
+                <option value="台北">台北</option>
+                <option value="台中">台中</option>
+                <option value="高雄">高雄</option>
+            </select>
+            <span class="search-getCount">本次搜尋共 3 筆資料</span>
+            <div id="c3-chart"></div>
+        </div>
+        <div class="sec2-container"></div>
+    </section>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src='https://cdnjs.cloudflare.com/ajax/libs/axios/1.6.2/axios.min.js'></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/5.16.0/d3.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/c3/0.7.18/c3.js"></script>
+    <script>
+        const sec1Right = document.querySelector('.sec1-right');
+        const sec2Container = document.querySelector('.sec2-container');
+        const filterArea = document.querySelector('.filter-area');
+        const newTicketBtn = document.querySelector('.btn');
+        const dataStyle = document.querySelectorAll('[data-style="number"');
+        let searchGetCount = document.querySelector('.search-getCount');
+        let isImg = document.querySelector('.is-img');
+        let jsonUrl = 'https://raw.githubusercontent.com/hexschool/js-training/main/travelApi.json'
+        let data;
+
+        function circlePie(arr) {
+            const chart = c3.generate({
+                bindto: '#c3-chart', // HTML 元素綁定
+                data: {
+                    columns: arr, // 資料存放
+                    type: 'donut', //圓環圖
+                    colors: {
+                        data1: '#ff0000',
+                        data2: '#00ff00',
+                        data3: '#0000ff'
+                    },
+                },
+                donut: { //中心文字
+                    title: "套票地區比重",
+                    width: 30,
+                    label: {
+                        show: false
+                    },
+                    padAngle: 0
+                },
+                transition: {
+                    duration: 1000, // 過渡時間，在圓環圖失效
+                },
+                size: { //寬高
+                    height: 250,
+                    width: 350
+                },
+                options: { //粗細
+                    cutoutPercentage: 30,
+                },
+            });
+        }
+
+        function drew(arr) {
+            let combinedArray = [];
+            let areaArr = arr.reduce((acc, input) => {
+                (input.area in acc) ? acc[input.area] += 1 : acc[input.area] = 1;
+                return acc;
+            }, {});
+            for (let i = 0; i < Math.min(Object.keys(areaArr).length, Object.values(areaArr).length); i++) {
+                combinedArray.push([Object.keys(areaArr)[i], Object.values(areaArr)[i]]);
+            }
+            return combinedArray;
+        }
+
+        function isImage(url) {
+            return new Promise((resolve, reject) => {
+
+                // 建立一個 Image 物件
+                var img = new Image();
+
+                // 設定圖片的來源為要檢查的網址
+                img.src = url;
+
+                // 設定圖片載入完成的處理函式
+                img.onload = function () {
+                    console.log('這是一張圖片！');
+                    resolve(true)
+                };
+
+                // 設定圖片載入失敗的處理函式
+                img.onerror = function () {
+                    console.log('這不是一張圖片。');
+                    resolve(false)
+                };
+            })
+        }
+
+        function getChange(value) {
+            sec1Right.reset();
+            const filterData = data.filter((e) => e.area === value);
+            let strTemplate = '';
+            for (const i of filterData) {
+                strTemplate +=
+                    `
+            <div class="ticket-card">
+                <mark>${i.area}</mark>
+                <div class="ticket-cart-content">
+                    <span class="scroe">${i.rate}</span>
+                    <img class="img-set" src="${i.imgUrl}" alt="">
+                    <h3>${i.name}</h3>
+                    <p class="describe">${i.description}</p>
+                    <div class="remaining">
+                        <div class="remaining-count">剩下最後 ${i.group} 組</div>
+                        <div style="display: flex;align-items: center;">
+                            <span class="twd">TWD</span>
+                            <p class="ticket-price">$${i.price.toLocaleString()}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            `
+            }
+            sec2Container.innerHTML = strTemplate;
+            searchGetCount.textContent = `本次搜尋共 ${filterData.length} 筆資料`;
+            circlePie(drew(data));
+        };
+
+        function showTicket(arr) {
+            sec1Right.reset();
+
+            let strTemplate = '';
+            for (const i of arr) {
+                strTemplate +=
+                    `
+            <div class="ticket-card">
+                <mark>${i.area}</mark>
+                <div class="ticket-cart-content">
+                    <span class="scroe">${i.rate}</span>
+                    <img class="img-set" src="${i.imgUrl}" alt="">
+                    <h3>${i.name}</h3>
+                    <p class="describe">${i.description}</p>
+                    <div class="remaining">
+                        <div class="remaining-count">剩下最後 ${i.group} 組</div>
+                        <div style="display: flex;align-items: center;">
+                            <span class="twd">TWD</span>
+                            <p class="ticket-price">$${i.price.toLocaleString()}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            `
+            }
+            sec2Container.innerHTML = strTemplate;
+            searchGetCount.textContent = `本次搜尋共 ${arr.length} 筆資料`;
+            circlePie(drew(data));
+        };
+
+        axios.get(jsonUrl)
+            .then((res) => {
+                data = res.data.data;
+            })
+            .catch((err) => {
+                console.log(err);
+                Swal.fire({
+                    icon: "error",
+                    title: "抓取失敗",
+                    text: "請確認網址"
+                });
+            })
+            .finally(() => {
+                if (Array.isArray(data)) {
+                    showTicket(data)
+                } else {
+                    Swal.fire({
+                        icon: "error",
+                        title: "顯示失敗",
+                        text: "請確認資料來源是否為JSON格式"
+                    });
+                }
+            });
+
+        newTicketBtn.addEventListener('click', (event) => {
+            event.preventDefault(); // 阻止表單預設提交動作
+            const valueSet = [...document.querySelectorAll('.is-null')];
+            if (valueSet.find((e) => e.value.trim() === '')) {
+                Swal.fire({
+                    icon: "error",
+                    title: "新增失敗",
+                    text: "欄位未填寫確實"
+                });
+                return
+            };
+            isImage(isImg.value)
+                .then((bool) => {
+                    let imbBool = bool;
+                    let allFiled = true;
+                    const valueSet = document.querySelectorAll('.is-null');
+                    valueSet.forEach((e) => e.value.trim() === '' ? allFiled = false : allFiled = allFiled);
+                    if (imbBool == true && allFiled) {
+                        let inputValuesObject = Array.from(valueSet).reduce((acc, input) => {
+                            (input.name == "price" || input.name == "group" || input.name == "rate") ?
+                                acc[input.name] = parseInt(input.value) :
+                                acc[input.name] = input.value;
+                            return acc;
+                        }, {});
+                        data.push({ ...inputValuesObject, "id": data.length });
+                        filterArea.value === "全部地區" || filterArea.value === "" ? showTicket(data) : getChange(filterArea.value);
+                        Swal.fire({
+                            icon: "success",
+                            title: "新增成功",
+                            text: "請往下選擇對應地區並確認"
+                        });
+                    } else {
+                        Swal.fire({
+                            icon: "error",
+                            title: "圖片獲取失敗",
+                            text: "請再次確認圖片來源"
+                        });
+                    }
+                }).catch((err) => {
+                    console.log(err);
+                });
+
+        });
+
+        filterArea.addEventListener('change', (e) => {
+            const getValue = e.target.value;
+            (getValue === "全部地區") ? showTicket(data) : getChange(getValue);
+        });
+
+        dataStyle.forEach(eData => eData.addEventListener('input', e => {
+            e.target.value = e.target.value.trim().replaceAll(/[^0-9]/g, '') <= 0 ? 1 : e.target.value;
+        }));
+    </script>
+</body>
+
+</html>
